@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>PC G@me$ · Korona</title>
+  <style>
+    :root { font-family: Inter, ui-sans-serif, system-ui, sans-serif; color: #eef0f6; background: #090a0e; }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+    body { background: #090a0e; }
+    #stage { position: fixed; inset: 0; }
+    #player { width: 100%; height: 100%; border: 0; display: none; background: #000; }
+    #player.ready { display: block; }
+    #status { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; }
+    #status[hidden] { display: none; }
+    .card { width: min(420px, 100%); padding: 26px; border: 1px solid #292b33; border-radius: 12px; background: #111218; text-align: left; }
+    h1 { margin: 0 0 8px; font-size: 18px; font-weight: 650; letter-spacing: -.015em; }
+    p { margin: 0; color: #a7aab5; line-height: 1.5; font-size: 13px; }
+    .progress { height: 3px; margin: 22px 0 14px; overflow: hidden; background: #252731; }
+    .progress span { display: block; width: 32%; height: 100%; background: #8d78e8; animation: travel 1.4s ease-in-out infinite; }
+    button { display: none; width: 100%; margin-top: 20px; padding: 11px 15px; border: 1px solid #555a6b; border-radius: 7px; color: #f3f4f8; background: #242631; font: inherit; font-weight: 650; cursor: pointer; }
+    button.visible { display: block; }
+    .detail { display: block; min-height: 18px; margin-top: 7px; color: #737681; font-size: 11px; }
+    .ad-note { display: block; margin-top: 10px; color: #9b9eaa; font-size: 11px; }
+    .ad-note[hidden] { display: none; }
+    @keyframes travel { from { transform: translateX(-105%); } to { transform: translateX(320%); } }
+  </style>
+</head>
+<body>
+  <main id="stage">
+    <iframe id="player" title="PC game stream" allow="fullscreen; gamepad"></iframe>
+    <section id="status" aria-live="polite">
+      <div class="card">
+        <h1 id="heading">Starting PC game</h1>
+        <p id="message">Creating a session…</p>
+        <div class="progress" id="progress"><span></span></div>
+        <small class="detail" id="detail">Sessions have no gameplay time limit.</small>
+        <small class="ad-note" id="ad-note" hidden>An ad may appear while you wait. You can close it to continue.</small>
+        <button type="button" id="retry">Try again</button>
+      </div>
+    </section>
+  </main>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const gameKey = (params.get("game") || "").trim();
+    const portable = params.get("portable") === "1";
+    const player = document.getElementById("player");
+    const status = document.getElementById("status");
+    const heading = document.getElementById("heading");
+    const message = document.getElementById("message");
+    const detail = document.getElementById("detail");
+    const progress = document.getElementById("progress");
+    const retry = document.getElementById("retry");
+    const adNote = document.getElementById("ad-note");
+    let uuid = "";
+    let pingTimer = 0;
+    let stopped = false;
+    let loadingAdTimer = 0;
+    let loadingAdShown = false;
+    let adScripts;
+
+    function adTimestamp(key) {
+      try { return Number(sessionStorage.getItem(`korona.ad.${key}`)) || 0; } catch { return 0; }
+    }
+
+    function adEligible(key, intervalMs) {
+      const last = adTimestamp(key);
+      return !last || Date.now() - last >= intervalMs;
+    }
+
+    function markAd(key) {
+      try { sessionStorage.setItem(`korona.ad.${key}`, String(Date.now())); } catch { /* ad still runs if storage is disabled */ }
+    }
+
+    function loadAdScript(path) {
+      return new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = path;
+        script.async = false;
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+    }
+
+    function prepareAds() {
+      if (!adScripts) adScripts = loadAdScript("/_korona/media/anti-adblock.js")
+        .catch(() => {})
+        .then(() => loadAdScript("/_korona/media/aclib.js"))
+        .catch((error) => { adScripts = null; throw error; });
+      return adScripts;
+    }
+
+    function gameViewVisible() {
+      try { return !window.frameElement?.closest('[aria-hidden="true"]'); } catch { return true; }
+    }
+
+    function scheduleLoadingAd() {
+      if (portable || loadingAdShown) return;
+      window.clearTimeout(loadingAdTimer);
+      loadingAdTimer = window.setTimeout(async () => {
+        if (stopped || status.hidden || !gameViewVisible() || !adEligible("loading", 20 * 60_000)) return;
+        const format = adEligible("interstitial", 60 * 60_000) ? "interstitial" : "slider";
+        if (format === "slider" && !adEligible("slider", 20 * 60_000)) return;
+        try { await prepareAds(); } catch { return; }
+        if (stopped || status.hidden || !gameViewVisible() || !window.aclib) return;
+        const run = format === "interstitial" ? window.aclib.runInterstitial : window.aclib.runVideoSlider;
+        if (typeof run !== "function") return;
+        try {
+          run.call(window.aclib, { zoneId: format === "interstitial" ? "12227370" : "12226162" });
+          loadingAdShown = true;
+          markAd("loading");
+          markAd(format);
+          adNote.hidden = false;
+        } catch { /* ads must never interrupt session creation */ }
+      }, 8_000);
+    }
+
+    function setStatus(title, text, extra = "Sessions have no gameplay time limit.") {
+      heading.textContent = title;
+      message.textContent = text;
+      detail.textContent = extra;
+    }
+
+    function fail(reason) {
+      stopped = true;
+      window.clearTimeout(loadingAdTimer);
+      window.clearInterval(pingTimer);
+      if (uuid) {
+        quit(uuid);
+        uuid = "";
+      }
+      player.src = "about:blank";
+      setStatus("Couldn’t start the game", reason || "The PC G@me$ service is temporarily unavailable.", "You can retry without reloading Korona.");
+      progress.hidden = true;
+      retry.classList.add("visible");
+      status.hidden = false;
+      player.classList.remove("ready");
+    }
+
+    async function api(path, options = {}) {
+      const response = await fetch(`/api/pc-games/${path}`, {
+        credentials: "same-origin",
+        ...options,
+        headers: { Accept: "application/json", ...(options.body ? { "Content-Type": "application/json" } : {}), ...(options.headers || {}) },
+      });
+      if (!response.ok) {
+        let error = "Request failed";
+        try { error = (await response.json()).error || error; } catch {}
+        throw new Error(error);
+      }
+      return response;
+    }
+
+    async function apiJson(path, options = {}) {
+      const controller = new AbortController();
+      const timer = window.setTimeout(() => controller.abort(), 35000);
+      try {
+        const response = await api(path, { ...options, signal: controller.signal });
+        return await response.json();
+      } catch (error) {
+        if (controller.signal.aborted) throw new Error("The game service did not respond. Please try again.");
+        throw error;
+      } finally {
+        window.clearTimeout(timer);
+      }
+    }
+
+    async function createSession() {
+      const initial = await apiJson("create-session?mode=poll", { method: "POST", body: JSON.stringify({ game_key: gameKey }) });
+      if (initial.status !== "creating_account" || !/^[0-9a-f-]{36}$/i.test(initial.uuid || "")) {
+        throw new Error("The service returned an incomplete session.");
+      }
+      uuid = initial.uuid;
+      const startedAt = Date.now();
+      let missedPolls = 0;
+      while (!stopped) {
+        await new Promise((resolve) => window.setTimeout(resolve, 3000));
+        if (stopped) return null;
+        let event;
+        try {
+          event = await apiJson(`create-status?uuid=${encodeURIComponent(uuid)}`);
+          missedPolls = 0;
+        } catch (error) {
+          if (++missedPolls >= 3) throw error;
+          setStatus("Starting PC game", "Reconnecting to the game service…");
+          continue;
+        }
+        if (event.status === "creating_account") {
+          const extra = Date.now() - startedAt > 20000
+            ? "Waiting for email verification. This may take a few minutes; gameplay has no time limit."
+            : "Sessions have no gameplay time limit.";
+          setStatus("Starting PC game", "Signing in to the game service…", extra);
+        } else if (event.status === "requesting_game") {
+          setStatus("Starting PC game", "Finding an available PC…");
+        } else if (event.status === "queue") {
+          setStatus("Waiting for a PC", "Your session is queued.", `Queue position: ${event.queue_pos ?? "checking…"} · No gameplay time limit once connected.`);
+          return "queue";
+        } else if (event.status === "finished_queue") {
+          setStatus("Starting PC game", "Connecting to the stream…");
+          return "finished_queue";
+        } else if (event.status === "error") {
+          throw new Error(event.error || "Session creation failed");
+        } else {
+          throw new Error("The service returned an unexpected state.");
+        }
+      }
+      return null;
+    }
+
+    async function waitForQueue() {
+      while (!stopped) {
+        await new Promise((resolve) => setTimeout(resolve, 3500));
+        const event = await apiJson(`queue?uuid=${encodeURIComponent(uuid)}`);
+        if (event.status === "finished_queue") return;
+        if (event.status !== "queue") throw new Error(event.error || "The queue ended unexpectedly.");
+        setStatus("Waiting for a PC", "Your session is queued.", `Queue position: ${event.queue_pos ?? "checking…"} · No gameplay time limit once connected.`);
+      }
+    }
+
+    async function beginStream() {
+      const session = await apiJson("start", { method: "POST", body: JSON.stringify({ uuid }) });
+      if (Number(session.max_seconds) > 0) throw new Error("This server returned an unexpected gameplay limit.");
+      window.clearTimeout(loadingAdTimer);
+      player.src = `/pc-session.html?id=${encodeURIComponent(uuid)}`;
+      player.classList.add("ready");
+      status.hidden = true;
+      pingTimer = window.setInterval(ping, 15000);
+    }
+
+    async function ping() {
+      if (!uuid || stopped) return;
+      try {
+        const session = await apiJson("ping", { method: "POST", body: JSON.stringify({ uuid }) });
+        if (Number(session.session_time_limit_seconds) > 0) fail("The server unexpectedly applied a gameplay limit.");
+      } catch (error) {
+        fail(error instanceof Error ? error.message : "The session disconnected.");
+      }
+    }
+
+    function quit(id) {
+      fetch("/api/pc-games/quit", {
+        method: "POST",
+        credentials: "same-origin",
+        keepalive: true,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uuid: id }),
+      }).catch(() => {});
+    }
+
+    function release() {
+      stopped = true;
+      window.clearTimeout(loadingAdTimer);
+      window.clearInterval(pingTimer);
+      if (!uuid) return;
+      quit(uuid);
+    }
+
+    async function start() {
+      if (!/^[A-Za-z0-9_-]{1,128}$/.test(gameKey)) return fail("This game link is invalid.");
+      stopped = false;
+      uuid = "";
+      retry.classList.remove("visible");
+      progress.hidden = false;
+      status.hidden = false;
+      adNote.hidden = true;
+      setStatus("Starting PC game", "Creating a session…");
+      scheduleLoadingAd();
+      try {
+        const state = await createSession();
+        if (state === "queue") await waitForQueue();
+        else if (state !== "finished_queue" && !stopped) throw new Error("The service returned an unexpected state.");
+        if (!stopped) await beginStream();
+      } catch (error) {
+        fail(error instanceof Error ? error.message : "The PC G@me$ service is unavailable.");
+      }
+    }
+
+    retry.addEventListener("click", start);
+    window.addEventListener("pagehide", release, { once: true });
+    start();
+  </script>
+</body>
+</html>
