@@ -31,7 +31,21 @@
             size();
             window.addEventListener('resize', size);
 
+            async function coiGate() {
+              try {
+                if (window.crossOriginIsolated) return false;
+                if (!('serviceWorker' in navigator)) return false;
+                if (sessionStorage.getItem('coi-tried')) return false;
+                sessionStorage.setItem('coi-tried', '1');
+                await navigator.serviceWorker.register(new URL('coi-sw.js', location.href).href);
+                await navigator.serviceWorker.ready;
+                location.reload();
+                return true;
+              } catch (e) { console.warn('coi', e); return false; }
+            }
+
             (async () => {
+              if (await coiGate()) return;
               try {
                 const url = 'https://cdn.jsdelivr.net/gh/lotsacookie/kstuff@main/Assets/loader-ab.html?t=' + Date.now();
                 const res = await fetch(url);
