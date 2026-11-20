@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xhtml="http://www.w3.org/1999/xhtml" width="100%" height="100%" viewBox="0 0 1920 1080">
+  <foreignObject id="fo" width="1920" height="1080" x="0" y="0">
+    <xhtml:html xmlns="http://www.w3.org/1999/xhtml" style="width:100%;height:100%;margin:0;padding:0;">
+      <xhtml:head>
+        <xhtml:style>
+          *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+          html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
+          iframe { position: fixed; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+        </xhtml:style>
+      </xhtml:head>
+      <xhtml:body>
+        <xhtml:iframe id="fm" src="about:blank"></xhtml:iframe>
+        <xhtml:script>
+          //<![CDATA[
+          (function() {
+            function size() {
+              var w = window.innerWidth, h = window.innerHeight;
+              var svg = document.querySelector('svg');
+              var fo = document.querySelector('foreignObject');
+              if (svg) {
+                svg.setAttribute('width', w);
+                svg.setAttribute('height', h);
+                svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+              }
+              if (fo) {
+                fo.setAttribute('width', w);
+                fo.setAttribute('height', h);
+              }
+            }
+            size();
+            window.addEventListener('resize', size);
+
+            async function coiGate() {
+              try {
+                if (window.crossOriginIsolated) return false;
+                if (!('serviceWorker' in navigator)) return false;
+                if (sessionStorage.getItem('coi-tried')) return false;
+                sessionStorage.setItem('coi-tried', '1');
+                await navigator.serviceWorker.register(new URL('coi-sw.js', location.href).href);
+                await navigator.serviceWorker.ready;
+                location.reload();
+                return true;
+              } catch (e) { console.warn('coi', e); return false; }
+            }
+
+            var LOADER = "<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Study.com - Math, Language Arts, Science<\/title><link rel=\"preconnect\" href=\"https://fonts.googleapis.com\"><link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin><link rel=\"stylesheet\" href=\"https://fonts.googleapis.com/css2?family=Comfortaa:wght@300..700&family=Orbitron:wght@400..900&family=Poppins:wght@300..700&family=Roboto:wght@300..700&family=Inter:wght@300..700&display=swap\"><style>html{background:#000}body{--bg-color:#000000;--text-color:#ffffff;margin:0;height:100vh;overflow:hidden;background:var(--bg-color);color:var(--text-color);font-weight:600}*,body{font-family:var(--font,\"Comfortaa\",sans-serif)!important}#loading-screen{position:fixed;inset:0;width:100vw;height:100vh;background-color:var(--bg-color,#000000);color:var(--text-color,#ffffff);display:flex;flex-direction:column;justify-content:center;align-items:center;gap:1.4rem;z-index:999999;contain:layout paint}#loading-screen::before{content:\"\";position:absolute;inset:0;background-image:linear-gradient(to right,color-mix(in srgb,var(--text-color,#ffffff) 14%,transparent) 1px,transparent 1px),linear-gradient(to bottom,color-mix(in srgb,var(--text-color,#ffffff) 14%,transparent) 1px,transparent 1px);background-size:56px 56px;pointer-events:none;opacity:0;animation:ld-bg-in 1.6s ease .1s both}#loading-screen>*{position:relative;opacity:0;animation:ld-in 1s cubic-bezier(.22,1,.36,1) both}#loading-screen>.ld-logo{animation-delay:.25s}#loading-screen>.ld-word{animation-delay:.45s}#loading-screen>.ld-bar{animation-delay:.65s}#loading-screen>.ld-status{animation-delay:.8s}@keyframes ld-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}@keyframes ld-bg-in{from{opacity:0}to{opacity:1}}.ld-logo{width:5.5rem;height:5.5rem;overflow:visible}.ld-core{transform-origin:50px 50px;animation:ld-pulse 2.8s ease-in-out infinite}.ld-word{font-size:.8rem;font-weight:600!important;letter-spacing:.5em;text-transform:uppercase;margin-right:-.5em}.ld-bar{width:min(240px,60vw);height:1px;border-radius:0;overflow:hidden;background:color-mix(in srgb,var(--text-color,#ffffff) 14%,transparent)}.ld-fill{position:relative;will-change:transform;width:100%;height:100%;transform:scaleX(0);transform-origin:left;background:var(--text-color,#ffffff);transition:transform .5s cubic-bezier(.22,1,.36,1)}.ld-fill::after{content:\"\";position:absolute;inset:0;background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--bg-color,#000000) 55%,transparent),transparent);animation:ld-sheen 1.5s ease-in-out infinite}.ld-status{font-size:.65rem;letter-spacing:.3em;text-transform:uppercase;opacity:.5;min-height:1.2em;font-variant-numeric:tabular-nums}@keyframes ld-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}@keyframes ld-sheen{from{transform:translateX(-100%)}to{transform:translateX(100%)}}@media (prefers-reduced-motion:reduce){.ld-logo,.ld-core,.ld-fill::after{animation:none}#loading-screen::before{animation:ld-bg-in .01s both}#loading-screen>*{opacity:1;animation:none}}<\/style><\/head><body><div id=\"loading-screen\"><svg class=\"ld-logo\" viewBox=\"24 24 52 52\" xmlns=\"http://www.w3.org/2000/svg\" aria-hidden=\"true\"><g class=\"ld-core\" fill=\"currentColor\"><path d=\"M50.0 29.0 L51.7 45.8 L58.5 41.5 L54.2 48.3 L71.0 50.0 L54.2 51.7 L58.5 58.5 L51.7 54.2 L50.0 71.0 L48.3 54.2 L41.5 58.5 L45.8 51.7 L29.0 50.0 L45.8 48.3 L41.5 41.5 L48.3 45.8 Z\"/><\/g><\/svg><div class=\"ld-word\">Singularity<\/div><div class=\"ld-bar\"><div class=\"ld-fill\" id=\"ld-fill\"><\/div><\/div><div class=\"ld-status\" id=\"ld-status\">Loading<\/div><\/div><script>(function(){var f=document.getElementById(\"ld-fill\"),s=document.getElementById(\"ld-status\"),p=0.08;function t(){p+=(0.9-p)*0.06;if(f)f.style.transform=\"scaleX(\"+p+\")\";}setTimeout(function(){if(f)f.style.transform=\"scaleX(.08)\";},50);setInterval(t,400);})();<\/script><\/body><\/html>";
+            var GUARD = '<script>window.addEventListener("beforeunload",function(e){e.preventDefault();e.returnValue="";return ""});<\/script>';
+            var REPO = 'lotsacookie/kstuff';
+
+            function withGuard(html, base) {
+              var inject = (base ? '<base href="' + base + '">' : '') + GUARD;
+              return /<head>/i.test(html) ? html.replace(/<head>/i, '<head>' + inject) : inject + html;
+            }
+
+            function paint(w, html, base) {
+              w.document.open();
+              w.document.write(withGuard(html, base));
+              w.document.close();
+            }
+
+            function openPopup() {
+              try {
+                var w = window.open('about:blank', '_blank', 'width=1000,height=700');
+                if (w && !w.closed) {
+                  w.name = 'classroomSession';
+                  paint(w, LOADER);
+                  return w;
+                }
+              } catch (e) {}
+              return null;
+            }
+
+            async function getContent() {
+              var ver = 'main';
+              try {
+                var r = await fetch('https://api.github.com/repos/' + REPO + '/commits/main');
+                if (r.ok) {
+                  var d = await r.json();
+                  if (d && d.sha) ver = d.sha;
+                } else {
+                  var a = await fetch('https://data.jsdelivr.com/v1/packages/gh/' + REPO + '/resolved?specifier=main&t=' + Date.now());
+                  if (a.ok) {
+                    var ad = await a.json();
+                    if (ad && /^[0-9a-f]{40}$/i.test(ad.version)) ver = ad.version;
+                  }
+                }
+              } catch (e) {}
+              var mirrors = [
+                'https://cdn.jsdelivr.net/gh/' + REPO + '@' + ver + '/',
+                'https://raw.githubusercontent.com/' + REPO + '/' + ver + '/',
+                'https://raw.githack.com/' + REPO + '/' + ver + '/',
+                'https://cdn.statically.io/gh/' + REPO + '/' + ver + '/'
+              ];
+              for (var i = 0; i < mirrors.length; i++) {
+                try {
+                  var res = await fetch(mirrors[i] + 'index.html?t=' + Date.now());
+                  if (res.ok) return { text: await res.text(), base: mirrors[i] + 'index.html' };
+                } catch (e) {}
+              }
+              return null;
+            }
+
+            (async () => {
+              if (await coiGate()) return;
+
+              var frame = document.getElementById('fm');
+              var fdoc = frame.contentDocument || frame.contentWindow.document;
+              fdoc.open(); fdoc.write(LOADER); fdoc.close();
+
+              var win = openPopup();
+              var contentP = getContent();
+
+              if (!win) {
+                var st = fdoc.getElementById('ld-status');
+                if (st) st.textContent = 'Click to continue';
+                await new Promise(function(res) {
+                  fdoc.addEventListener('click', function h() {
+                    win = openPopup();
+                    if (win) { fdoc.removeEventListener('click', h); res(); }
+                  });
+                });
+              }
+
+              var c = await contentP;
+              if (!c) { console.error('All mirrors failed'); return; }
+              if (win.closed) return;
+              paint(win, c.text, c.base);
+              window.location.replace('https://clever.com');
+            })();
+          })();
+          //]]>
+        </xhtml:script>
+      </xhtml:body>
+    </xhtml:html>
+  </foreignObject>
+</svg>
